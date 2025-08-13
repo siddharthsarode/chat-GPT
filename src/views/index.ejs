@@ -4,14 +4,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/css/form.css">
-    <title>
-        <%= title %>
-    </title>
+    <title>ChatGPT - Chat</title>
+    <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="/css/chat.css">
 </head>
 
 <body>
-    <h1>Home page</h1>
+    <div class="chat-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>Chats</h2>
+                <button id="toggleSidebar" class="toggle-btn">☰</button>
+            </div>
+            <ul class="chat-list" id="chatList">
+                <!-- Chat list items will be rendered here -->
+            </ul>
+            <button id="newChatBtn" class="new-chat-btn">+ New chat</button>
+        </aside>
+        <main class="main-section">
+            <header class="main-header">
+                <button id="header_toggle_btn" class="toggle-btn">☰</button>
+                <h2 id="chatTitle">New chat</h2>
+            </header>
+            <section class="messages" id="messages">
+                <!-- Messages will be rendered here -->
+            </section>
+            <form id="messageForm" class="message-form">
+                <input type="text" id="messageInput" placeholder="Type your message..." autocomplete="off" required />
+                <button type="submit" class="send-btn">Send</button>
+            </form>
+        </main>
+    </div>
+    <script src="/js/chat.js"></script>
 </body>
 
 </html>
