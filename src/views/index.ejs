@@ -20,6 +20,7 @@
                 <!-- Chat list items will be rendered here -->
             </ul>
             <button id="newChatBtn" class="new-chat-btn">+ New chat</button>
+            <button class="logout-btn"><a href="/auth/logout">Logout</a></button>
         </aside>
         <main class="main-section">
             <header class="main-header">
@@ -35,6 +36,16 @@
             </form>
         </main>
     </div>
+
+    <!-- Socket io cdn link -->
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"
+        integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+"
+        crossorigin="anonymous"></script>
+
+    <script>
+        const socket = io();
+    </script>
+
     <script src="/js/chat.js"></script>
 </body>
 

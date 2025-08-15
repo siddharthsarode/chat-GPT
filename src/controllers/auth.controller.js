@@ -12,13 +12,13 @@ const postRegisterController = async (req, res) => {
 
   // Basic validation
   if (!username || !email || !password) {
-    return res.status(400).json({ error: "All fields are required." });
+    return res.render("./auth/register", { error: "All fields are required." });
   }
 
   // Email format validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    return res.status(400).json({ error: "Invalid email format." });
+    return res.render("./auth/register", { error: "Invalid email format." });
   }
 
   if (password.length < 6) {
@@ -32,7 +32,9 @@ const postRegisterController = async (req, res) => {
       $or: [{ email: email }, { username: username }],
     });
     if (existingUser) {
-      return res.status(409).json({ error: "Email already registered." });
+      return res.render("./auth/register", {
+        error: "Email already registered.",
+      });
     }
 
     // hash password
@@ -51,12 +53,12 @@ const postRegisterController = async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    res
-      .status(201)
-      .json({ message: "Registration successful.", user: { username, email } });
+    res.redirect("/");
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: "Server error." });
+    res.render("./auth/register", {
+      error: err.message || "Something went wrong",
+    });
   }
 };
 
@@ -70,7 +72,7 @@ const postLoginController = async (req, res) => {
 
   // Basic validation
   if (!email || !password) {
-    return res.status(400).json({ error: "All fields are required." });
+    return res.render("./auth/login", { error: "All fields are required." });
   }
 
   try {
@@ -78,12 +80,12 @@ const postLoginController = async (req, res) => {
       $or: [{ email: email }, { username: email }],
     });
     if (!user) {
-      return res.status(401).json({ error: "Invalid credentials." });
+      return res.render("./auth/login", { error: "Invalid credentials." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ error: "Invalid credentials." });
+      return res.render("./auth/login", { error: "Invalid credentials." });
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -96,19 +98,22 @@ const postLoginController = async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    res.status(200).json({
-      message: "Login successful.",
-      user: { username: user.username, email: user.email },
-    });
+    res.redirect("/");
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: "Server error." });
+    res.render("./auth/login", { error: "Server error." + err.message });
   }
+};
+
+const getLogoutController = (req, res) => {
+  res.clearCookie("token");
+  res.redirect("/auth/login");
 };
 
 module.exports = {
   getRegisterController,
-  postRegisterController,
   getLoginController,
+  getLogoutController,
+  postRegisterController,
   postLoginController,
 };
