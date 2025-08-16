@@ -37,8 +37,8 @@ function renderMessages() {
   messagesSection.innerHTML = "";
   chat.messages.forEach((msg) => {
     const div = document.createElement("div");
-    div.className = "message " + (msg.sender === "user" ? "user" : "bot");
-    div.innerHTML = `<span>${msg.text}</span>`;
+    div.className = "message " + (msg.role === "user" ? "user" : "ai");
+    div.innerHTML = `<span>${msg.content}</span>`;
     messagesSection.appendChild(div);
   });
   messagesSection.scrollTop = messagesSection.scrollHeight;
@@ -49,14 +49,19 @@ messageForm.addEventListener("submit", function (e) {
   const text = messageInput.value.trim();
   if (!text) return;
   const chat = chats.find((c) => c.id === currentChatId);
-  chat.messages.push({ sender: "user", text });
+  chat.messages.push({ role: "user", content: text });
   renderMessages();
   messageInput.value = "";
-  // Simulate bot response
-  setTimeout(() => {
-    chat.messages.push({ sender: "bot", text: `Echo: ${text}` });
-    renderMessages();
-  }, 600);
+
+  socket.emit("message", text);
+});
+
+console.log("chats", chats);
+// catching server ai message here
+socket.on("ai-message-response", (message) => {
+  const chat = chats.find((c) => c.id === currentChatId);
+  chat.messages.push({ role: "ai", content: message });
+  renderMessages();
 });
 
 newChatBtn.addEventListener("click", function () {
