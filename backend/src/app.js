@@ -1,12 +1,14 @@
 const express = require("express");
-const path = require("path");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
+
+// Routers
 const authRoutes = require("./routes/auth.route");
-const { authMiddleware } = require("./middleware/auth.middleware");
+const chatRoutes = require("./routes/chat.route");
 
 const app = express();
 
+// middlewares
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -14,10 +16,12 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
 
+// routers use
 app.use("/api/auth", authRoutes);
+app.use("/api/chats", chatRoutes);
 
-app.get("/", authMiddleware, (req, res) => {
-  res.render("index", { title: "Home" });
+app.get("/", (req, res) => {
+  res.json({ title: "Home" });
 });
 
 module.exports = app;

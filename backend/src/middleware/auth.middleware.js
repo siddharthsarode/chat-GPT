@@ -3,12 +3,12 @@ const User = require("../models/user.model");
 
 const authMiddleware = async (req, res, next) => {
   try {
-    const token = req.cookies?.token;
+    const token = req.cookies?.gpt_token;
 
-    if (!token) return res.redirect("./auth/login");
+    if (!token) return res.status(401).json({ message: "You must be login." });
 
     const decode = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decode.id).select("-password");
+    const user = await User.findById(decode.id);
 
     if (!user) return res.redirect("./auth/login");
 
@@ -16,23 +16,8 @@ const authMiddleware = async (req, res, next) => {
     next();
   } catch (err) {
     console.log("auth middleware error", err);
-    res.redirect("./auth/login");
+    res.status(401).json({ message: err.message || "You must be login." });
   }
 };
 
-const redirectIfAuthenticated = (req, res, next) => {
-  const token = req.cookies?.token;
-
-  if (!token) {
-    return next();
-  }
-
-  try {
-    jwt.verify(token, process.env.JWT_SECRET);
-    return res.redirect("/");
-  } catch (err) {
-    return next();
-  }
-};
-
-module.exports = { authMiddleware, redirectIfAuthenticated };
+module.exports = { authMiddleware };
