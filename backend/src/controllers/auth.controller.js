@@ -3,9 +3,6 @@ const User = require("../models/user.model");
 const bcrypt = require("bcryptjs");
 
 // Register controller
-const getRegisterController = (req, res) => {
-  res.render("./auth/register", { title: "Register" });
-};
 
 const postRegisterController = async (req, res) => {
   const { username, email, password } = req.body;
@@ -32,9 +29,7 @@ const postRegisterController = async (req, res) => {
       $or: [{ email: email }, { username: username }],
     });
     if (existingUser) {
-      return res.render("./auth/register", {
-        error: "Email already registered.",
-      });
+      return res.status(400).json({ message: "Email already registered." });
     }
 
     // hash password
@@ -47,32 +42,35 @@ const postRegisterController = async (req, res) => {
       expiresIn: "1d",
     });
 
-    res.cookie("token", token, {
+    res.cookie("gpt_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    res.redirect("/");
+    res.status(201).json({
+      message: "User register successfully",
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (err) {
     console.log(err);
-    res.render("./auth/register", {
-      error: err.message || "Something went wrong",
-    });
+    res.status(500).json({ message: err.message || "Internal Server Error" });
   }
 };
 
 // login controller
-const getLoginController = (req, res) => {
-  res.render("./auth/login", { title: "Login" });
-};
 
 const postLoginController = async (req, res) => {
   const { email, password } = req.body;
 
   // Basic validation
   if (!email || !password) {
-    return res.render("./auth/login", { error: "All fields are required." });
+    return res.json({ message: "All fields are required." });
   }
 
   try {
@@ -80,40 +78,40 @@ const postLoginController = async (req, res) => {
       $or: [{ email: email }, { username: email }],
     });
     if (!user) {
-      return res.render("./auth/login", { error: "Invalid credentials." });
+      return res.status(401).json({ message: "Invalid credentials." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.render("./auth/login", { error: "Invalid credentials." });
+      return res.status(401).json({ message: "Invalid credentials." });
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
 
-    res.cookie("token", token, {
+    res.cookie("gpt_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    res.redirect("/");
+    res.status(200).json({
+      message: "User login successfully",
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (err) {
     console.log(err);
-    res.render("./auth/login", { error: "Server error." + err.message });
+    res.status(500).json({ message: "Server error." + err.message });
   }
 };
 
-const getLogoutController = (req, res) => {
-  res.clearCookie("token");
-  res.redirect("/auth/login");
-};
-
 module.exports = {
-  getRegisterController,
-  getLoginController,
-  getLogoutController,
   postRegisterController,
   postLoginController,
 };
