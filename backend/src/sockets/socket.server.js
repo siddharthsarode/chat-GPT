@@ -1,19 +1,84 @@
 const { Server } = require("socket.io");
+const cookie = require("cookie");
+const jwt = require("jsonwebtoken");
+
 const { aiGenerateContent } = require("../services/ai.service");
+const User = require("../models/user.model");
+const Message = require("../models/message.model");
 
 const setupSocketIoServer = async (httpServer) => {
   const io = new Server(httpServer, {});
 
+  // Middlewares
+
+  // check user is logged in or not
+  io.use(async (socket, next) => {
+    const cookies = cookie.parse(socket.handshake.headers?.cookie || "");
+
+    if (!cookies.gpt_token) {
+      next(new Error("Unauthorized User: No token provided"));
+    }
+
+    try {
+      const decode = jwt.verify(cookies.gpt_token, process.env.JWT_SECRET);
+      const user = await User.findById(decode.id);
+      socket.user = user;
+      next();
+    } catch (err) {
+      next(new Error(err.message || "Unauthorized User"));
+    }
+  });
+
   io.on("connection", async (socket) => {
-    console.log("A user connected");
+    console.log("A user connected", socket.id, socket.user.username);
 
-    socket.on("message", async (message) => {
-      console.log("User: ", message);
+    // Listen client event
+    socket.on("message", async (messagePayload) => {
+      console.log("User: ", messagePayload);
 
-      const aiResponse = await aiGenerateContent(message);
+      // message save into db
+      const msg = new Message({
+        user: socket.user._id,
+        chat: messagePayload.chat,
+        role: "user",
+        content: messagePayload.content,
+      });
+      await msg.save();
+
+      // Short term memory logic
+      const messages = (
+        await Message.find({ chat: messagePayload.chat })
+          .sort({ createAt: -1 })
+          .limit(10)
+          .lean()
+      ).reverse();
+      const chatHistory = messages.map((msg) => {
+        return {
+          role: msg.role,
+          parts: [{ text: msg.content }],
+        };
+      });
+
+      // console.log("chat history", chatHistory);
+
+      // ai generate response
+      const aiResponse = await aiGenerateContent(chatHistory);
       console.log("AI: ", aiResponse);
 
-      socket.emit("ai-message-response", aiResponse);
+      //message's response save into db
+      const aiMsg = new Message({
+        user: socket.user._id,
+        chat: messagePayload.chat,
+        role: "model",
+        content: aiResponse,
+      });
+      await aiMsg.save();
+
+      // fire event
+      socket.emit("ai-message-response", {
+        chat: messagePayload.chat,
+        content: aiResponse,
+      });
     });
   });
 };
