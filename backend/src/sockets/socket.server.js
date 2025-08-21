@@ -2,9 +2,13 @@ const { Server } = require("socket.io");
 const cookie = require("cookie");
 const jwt = require("jsonwebtoken");
 
-const { aiGenerateContent } = require("../services/ai.service");
+const {
+  aiGenerateContent,
+  aiGenerateVectors,
+} = require("../services/ai.service");
 const User = require("../models/user.model");
 const Message = require("../models/message.model");
+const { insertVectors } = require("../services/vectorDB.service");
 
 const setupSocketIoServer = async (httpServer) => {
   const io = new Server(httpServer, {});
@@ -43,7 +47,25 @@ const setupSocketIoServer = async (httpServer) => {
         role: "user",
         content: messagePayload.content,
       });
-      await msg.save();
+      const msgRes = await msg.save();
+
+      // ***** PINECONE Database insert (start) *****
+
+      // generate vectors embedding
+      const vectors = await aiGenerateVectors(messagePayload.content);
+
+      // insert vector into vectorDB
+      await insertVectors({
+        vectors: vectors,
+        messageId: msgRes._id,
+        metadata: {
+          chat: messagePayload.chat,
+          user: socket.user._id,
+          text: messagePayload.content,
+        },
+      });
+
+      // ***** PINECONE Database insert (end) *****
 
       // Short term memory logic
       const messages = (
@@ -52,6 +74,7 @@ const setupSocketIoServer = async (httpServer) => {
           .limit(10)
           .lean()
       ).reverse();
+
       const chatHistory = messages.map((msg) => {
         return {
           role: msg.role,
@@ -72,9 +95,27 @@ const setupSocketIoServer = async (httpServer) => {
         role: "model",
         content: aiResponse,
       });
-      await aiMsg.save();
+      const resMsg = await aiMsg.save();
 
-      // fire event
+      // ***** PINECONE Database insert (start) *****
+
+      // generate vectors embedding
+      const responseVectors = await aiGenerateVectors(aiResponse);
+
+      // insert vector into vectorDB
+      await insertVectors({
+        vectors: responseVectors,
+        messageId: resMsg._id,
+        metadata: {
+          chat: messagePayload.chat,
+          user: socket.user._id,
+          text: aiResponse,
+        },
+      });
+
+      // ***** PINECONE Database insert (end) *****
+
+      // fire event (Send the ai generate response to client)
       socket.emit("ai-message-response", {
         chat: messagePayload.chat,
         content: aiResponse,
