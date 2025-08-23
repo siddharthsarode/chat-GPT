@@ -8,7 +8,10 @@ const {
 } = require("../services/ai.service");
 const User = require("../models/user.model");
 const Message = require("../models/message.model");
-const { insertVectors } = require("../services/vectorDB.service");
+const {
+  querySimilarChatVectors,
+  upsertChatMessageVector,
+} = require("../services/vectorDB.service");
 
 const setupSocketIoServer = async (httpServer) => {
   const io = new Server(httpServer, {});
@@ -38,88 +41,121 @@ const setupSocketIoServer = async (httpServer) => {
 
     // Listen client event
     socket.on("message", async (messagePayload) => {
+      const { chat, content } = messagePayload;
       console.log("User: ", messagePayload);
 
-      // message save into db
-      const msg = new Message({
+      // user message save into db
+      const userMsg = await new Message({
         user: socket.user._id,
-        chat: messagePayload.chat,
+        chat: chat,
         role: "user",
-        content: messagePayload.content,
+        content: content,
+      }).save();
+
+      // generate vectors for user message and get recent messages
+      const [vectors, recentMessage] = await Promise.all([
+        // generate vectors embedding
+        aiGenerateVectors(content),
+
+        // get recent messages
+        Message.find({ chat: chat }).sort({ createdAt: -1 }).limit(10).lean(),
+      ]);
+
+      console.log("Recent messages", recentMessage);
+
+      // query similar chats data (vector database)
+      const similarChatsMessages = await querySimilarChatVectors({
+        queryVectors: vectors,
+        limit: 3,
+        metadata: {},
       });
-      const msgRes = await msg.save();
 
-      // ***** PINECONE Database insert (start) *****
+      console.log("Similar chats messages", similarChatsMessages);
 
-      // generate vectors embedding
-      const vectors = await aiGenerateVectors(messagePayload.content);
-
-      // insert vector into vectorDB
-      await insertVectors({
-        vectors: vectors,
-        messageId: msgRes._id,
-        metadata: {
-          chat: messagePayload.chat,
-          user: socket.user._id,
-          text: messagePayload.content,
-        },
-      });
-
-      // ***** PINECONE Database insert (end) *****
-
-      // Short term memory logic
-      const messages = (
-        await Message.find({ chat: messagePayload.chat })
-          .sort({ createAt: -1 })
-          .limit(10)
-          .lean()
-      ).reverse();
-
-      const chatHistory = messages.map((msg) => {
+      // create chat history
+      const chatHistory = recentMessage.reverse().map((msg) => {
         return {
           role: msg.role,
           parts: [{ text: msg.content }],
         };
       });
 
-      // console.log("chat history", chatHistory);
+      // vector database memory
+      const longTermMemoryData = [
+        {
+          role: "user",
+          parts: [
+            {
+              text: `
+              These are some previous chat message used them to generate a response
+              ${similarChatsMessages
+                .map((item) => item.metadata.text)
+                .join("\n")}
+              `,
+            },
+          ],
+        },
+      ];
+
+      console.log("chat history", ...chatHistory);
+      console.log("long term memory", longTermMemoryData[0]);
 
       // ai generate response
-      const aiResponse = await aiGenerateContent(chatHistory);
+      const aiResponse = await aiGenerateContent([
+        ...longTermMemoryData,
+        ...chatHistory,
+      ]);
       console.log("AI: ", aiResponse);
-
-      //message's response save into db
-      const aiMsg = new Message({
-        user: socket.user._id,
-        chat: messagePayload.chat,
-        role: "model",
-        content: aiResponse,
-      });
-      const resMsg = await aiMsg.save();
-
-      // ***** PINECONE Database insert (start) *****
-
-      // generate vectors embedding
-      const responseVectors = await aiGenerateVectors(aiResponse);
-
-      // insert vector into vectorDB
-      await insertVectors({
-        vectors: responseVectors,
-        messageId: resMsg._id,
-        metadata: {
-          chat: messagePayload.chat,
-          user: socket.user._id,
-          text: aiResponse,
-        },
-      });
-
-      // ***** PINECONE Database insert (end) *****
 
       // fire event (Send the ai generate response to client)
       socket.emit("ai-message-response", {
-        chat: messagePayload.chat,
+        chat: chat,
         content: aiResponse,
       });
+
+      //message's response save into db
+      const aiMsg = await new Message({
+        user: socket.user._id,
+        chat: chat,
+        role: "model",
+        content: aiResponse,
+      }).save();
+
+      (async () => {
+        try {
+          await Promise.all([
+            // insert user message's vectors into vectorDB
+            upsertChatMessageVector({
+              vectors: vectors,
+              messageId: userMsg._id,
+              metadata: {
+                chat: chat,
+                user: socket.user._id,
+                text: content,
+              },
+            }),
+
+            // Generate ai response to vectors
+            (async () => {
+              // generate vectors embedding (ai response)
+              const responseVectors = await aiGenerateVectors(aiResponse);
+
+              // insert ai message's vector into vectorDB
+              await upsertChatMessageVector({
+                vectors: responseVectors,
+                messageId: aiMsg._id,
+                metadata: {
+                  chat: chat,
+                  user: socket.user._id,
+                  text: aiResponse,
+                },
+              });
+            })(),
+          ]);
+        } catch (err) {
+          console.error("Background vector insert error:", err);
+        }
+      })();
     });
   });
 };

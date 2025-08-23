@@ -5,7 +5,8 @@ const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
 
 const chatGptIndexDB = pc.Index("chat-gpt");
 
-const insertVectors = async ({ vectors, metadata, messageId }) => {
+// Insert method
+const upsertChatMessageVector = async ({ vectors, metadata, messageId }) => {
   try {
     const res = await chatGptIndexDB.upsert([
       {
@@ -20,12 +21,16 @@ const insertVectors = async ({ vectors, metadata, messageId }) => {
   }
 };
 
-const queryVectors = async ({ queryVectors, limit = 5, filter }) => {
+const querySimilarChatVectors = async ({
+  queryVectors,
+  limit = 5,
+  metadata,
+}) => {
   try {
     const data = await chatGptIndexDB.query({
       vector: queryVectors,
       topK: limit,
-      filter: filter || undefined,
+      includeMetadata: true,
     });
 
     return data.matches;
@@ -35,4 +40,4 @@ const queryVectors = async ({ queryVectors, limit = 5, filter }) => {
   }
 };
 
-module.exports = { insertVectors, queryVectors };
+module.exports = { upsertChatMessageVector, querySimilarChatVectors };
