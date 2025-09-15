@@ -2,8 +2,9 @@ import React, { useEffect, useRef } from "react";
 import ChatHeader from "./ChatHeader";
 import ChatMessage from "./ChatMessage";
 import InputBox from "./InputBox";
+import { Button } from "./ui/button";
 
-const ChatArea = ({ chat, onSendMessage, onToggleSidebar }) => {
+const ChatArea = ({ chat, onSendMessage, onToggleSidebar, onNewChat }) => {
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -18,22 +19,28 @@ const ChatArea = ({ chat, onSendMessage, onToggleSidebar }) => {
 
   if (!chat) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-800">
-        <div className="text-center text-gray-400">
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center text-gray-400 space-y-3">
+          <h1 className="text-5xl font-extrabold bg-gradient-to-r from-white via-gray-500 to-gray-600 bg-clip-text text-transparent mb-2">
+            ChatGPT Clone
+          </h1>
           <p className="text-lg">Select a chat to start messaging</p>
+          <Button className={"cursor-pointer"} onClick={onNewChat}>
+            Create New Chat
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-800">
+    <div className="flex-1 flex flex-col bg-gray-900">
       {/* Header */}
-      <ChatHeader title={chat.title} onToggleSidebar={onToggleSidebar} />
+      <ChatHeader title={chat?.title || ""} onToggleSidebar={onToggleSidebar} />
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
-        {chat.messages.length === 0 ? (
+      <div className="flex-1 overflow-y-auto pb-24 px-4 py-8">
+        {!chat || chat?.messages?.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-gray-400 max-w-md">
               <h2 className="text-2xl font-semibold mb-4 text-white">
@@ -45,21 +52,21 @@ const ChatArea = ({ chat, onSendMessage, onToggleSidebar }) => {
             </div>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto px-4 py-8">
-            <div className="space-y-6">
-              {chat.messages.map((message) => (
-                <ChatMessage key={message.id} message={message} />
-              ))}
-            </div>
+          <div className="space-y-6">
+            {chat?.messages?.map((message) => (
+              <ChatMessage key={message.id} message={message} />
+            ))}
             <div ref={messagesEndRef} />
           </div>
         )}
       </div>
 
       {/* Input Box */}
-      <div className="border-t border-gray-700">
-        <div className="max-w-3xl mx-auto px-4 py-4">
-          <InputBox onSendMessage={onSendMessage} />
+      <div className="fixed bottom-0 left-0 right-0 bg-gray-900">
+        <div className="flex justify-center items-center">
+          <div className="w-full md:w-1/2 lg:w-1/3 p-4 lg:ms-44">
+            <InputBox onSendMessage={onSendMessage} />
+          </div>
         </div>
       </div>
     </div>

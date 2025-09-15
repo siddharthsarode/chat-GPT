@@ -30,9 +30,9 @@ const Sidebar = ({
       {/* Sidebar */}
       <div
         className={`
-          fixed lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out z-50
+          fixed  lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out z-50
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
-          w-64 h-full bg-gray-900 flex flex-col
+          w-64 h-full bg-gray-950 flex flex-col
         `}
       >
         {/* New Chat Button */}
@@ -49,7 +49,7 @@ const Sidebar = ({
         {/* Chat History */}
         <div className="flex-1 overflow-y-auto px-4">
           <div className="space-y-1">
-            {chats.map((chat) => (
+            {chats?.map((chat) => (
               <button
                 key={chat.id}
                 onClick={() => onSelectChat(chat.id)}

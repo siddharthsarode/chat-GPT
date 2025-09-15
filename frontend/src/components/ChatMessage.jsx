@@ -19,7 +19,7 @@ const ChatMessage = ({ message }) => {
       {/* Message Content */}
       <div
         className={`
-          max-w-[70%] p-4 rounded-2xl
+          max-w-[90%] p-4 rounded-2xl
           ${
             isUser ? "bg-blue-600 text-white ml-auto" : "bg-gray-700 text-white"
           }

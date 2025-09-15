@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/auth.context";
 
 // ✅ Validation Schema
 const registerSchema = z
@@ -33,6 +34,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
+  const { register } = useAuth();
 
   const navigate = useNavigate();
 
@@ -47,13 +49,13 @@ const Register = () => {
   });
 
   const onSubmit = async (data) => {
-    setError("");
-
     try {
       // Here you can call your API later
       console.log("Form Data:", data);
-      navigate("/chat");
+      await register(data);
+      navigate("/");
     } catch (err) {
+      setError(err.message);
       setError("Registration failed. Please try again.");
     }
   };

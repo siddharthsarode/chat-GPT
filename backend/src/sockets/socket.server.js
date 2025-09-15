@@ -43,6 +43,11 @@ const setupSocketIoServer = async (httpServer) => {
     socket.on("message", async (messagePayload) => {
       const { chat, content } = messagePayload;
       console.log("User: ", messagePayload);
+      console.log("chat and content", chat, content);
+
+      if (!chat || !content) {
+        return socket.emit("error", { message: "Invalid message payload" });
+      }
 
       // user message save into db
       const userMsg = await new Message({

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/contexts/auth.context";
 
 // ✅ Validation Schema
 const loginSchema = z.object({
@@ -26,6 +26,7 @@ const loginSchema = z.object({
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const { login, loading } = useAuth();
 
   const navigate = useNavigate();
 
@@ -39,8 +40,8 @@ const Login = () => {
 
   const onSubmit = async (data) => {
     try {
-      const response = await apiRequest("/api/auth/login", "POST", data);
-      console.log(response);
+      await login(data);
+      navigate("/");
     } catch (err) {
       setError(err.message || "Login failed");
     }
@@ -140,12 +141,11 @@ const Login = () => {
               type="submit"
               className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium"
             >
-              {/* {isLoading ? (
+              {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 "Sign in"
-              )} */}
-              Sign in
+              )}
             </Button>
 
             {/* Footer */}
