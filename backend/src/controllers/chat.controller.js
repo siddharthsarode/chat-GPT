@@ -21,7 +21,7 @@ const createChatController = async (req, res) => {
 const getAllChatsController = async (req, res) => {
   try {
     const user = req.user;
-    const chats = await Chat.find({ user: user._id });
+    const chats = await Chat.find({ user: user._id }).sort({ createdAt: -1 });
 
     if (!chats || chats.length === 0) {
       return res
@@ -32,7 +32,7 @@ const getAllChatsController = async (req, res) => {
     res.status(200).json({
       data: chats,
       success: true,
-      message: "Chats fetched successfully",
+      message: "fetched successfully",
     });
   } catch (err) {
     res.status(500).json({ message: err.message || "Internal server error" });

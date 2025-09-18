@@ -8,15 +8,19 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { useSelector } from "react-redux";
 
 const Sidebar = ({
-  chats,
   selectedChatId,
   isOpen,
   onToggle,
   onNewChat,
   onSelectChat,
 }) => {
+  const chats = useSelector((state) => state.chat.chats);
+
+  console.log("redux chats", chats);
+
   return (
     <>
       {/* Mobile menu button */}
@@ -51,12 +55,12 @@ const Sidebar = ({
           <div className="space-y-1">
             {chats?.map((chat) => (
               <button
-                key={chat.id}
-                onClick={() => onSelectChat(chat.id)}
+                key={chat._id}
+                onClick={() => onSelectChat(chat._id)}
                 className={`
                   w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors group
                   ${
-                    selectedChatId === chat.id
+                    selectedChatId === chat._id
                       ? "bg-gray-700 text-white"
                       : "text-gray-300 hover:bg-gray-700 hover:text-white"
                   }

@@ -21,19 +21,28 @@ export const AuthContextProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  //   Load user from local storage
   useEffect(() => {
-    const user = localStorage.getItem("user");
-
-    if (user) setUser(JSON.parse(user));
-    setLoading(false);
+    const fetchUser = async () => {
+      try {
+        setLoading(true);
+        // Backend returns the user object directly (or 401 on failure).
+        // e.g. { username, email, role, status }
+        const response = await apiRequest("/api/auth/me", "GET");
+        // console.log("/api/auth/me ->", response);
+        // If response contains an email or username assume authenticated
+        if (response && (response.email || response.username)) {
+          setUser(response);
+        } else {
+          setUser(null);
+        }
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
   }, []);
-
-  // Save user in localStorage whenever it changes
-  useEffect(() => {
-    if (user) localStorage.setItem("user", JSON.stringify(user));
-    else localStorage.removeItem("user");
-  }, [user]);
 
   const login = useCallback(async (data) => {
     try {
@@ -69,9 +78,5 @@ export const AuthContextProvider = ({ children }) => {
 
   const value = { login, user, loading, register, logout };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

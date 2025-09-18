@@ -6,6 +6,7 @@ const cors = require("cors");
 // Routers
 const authRoutes = require("./routes/auth.route");
 const chatRoutes = require("./routes/chat.route");
+const messageRoutes = require("./routes/message.route");
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use(morgan("dev"));
 // routers use
 app.use("/api/auth", authRoutes);
 app.use("/api/chats", chatRoutes);
+app.use("/api/chat/messages", messageRoutes);
 
 app.get("/", (req, res) => {
   res.json({ title: "Home" });

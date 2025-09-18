@@ -72,7 +72,7 @@ const ChatMessage = ({ message }) => {
         </div>
 
         <div className="mt-2 text-xs text-gray-400">
-          {new Date(message.timestamp).toLocaleTimeString([], {
+          {new Date(message.createdAt).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
           })}

@@ -3,95 +3,39 @@ import Sidebar from "../Sidebar";
 import ChatArea from "../ChatArea";
 import { apiRequest } from "@/lib/api";
 import { useDispatch, useSelector } from "react-redux";
-import { setChats } from "@/store/slices/chatSlice";
-
-// // Dummy data
-// const dummyChats = [
-//   {
-//     id: "1",
-//     title: "React Best Practices",
-//     messages: [
-//       {
-//         id: "1",
-//         content: "What are some React best practices for 2024?",
-//         role: "user",
-//         timestamp: new Date("2024-01-15T10:00:00"),
-//       },
-//       {
-//         id: "2",
-//         content:
-//           "Here are some key React best practices for 2024:\n\n1. **Use Functional Components**: Prefer functional components with hooks over class components\n2. **Custom Hooks**: Extract reusable logic into custom hooks\n3. **State Management**: Use React Query/TanStack Query for server state\n4. **Performance**: Leverage React.memo, useMemo, and useCallback judiciously\n5. **TypeScript**: Use TypeScript for better type safety and developer experience",
-//         role: "assistant",
-//         timestamp: new Date("2024-01-15T10:00:30"),
-//       },
-//       {
-//         id: "3",
-//         content: "Can you elaborate on custom hooks?",
-//         role: "user",
-//         timestamp: new Date("2024-01-15T10:01:00"),
-//       },
-//       {
-//         id: "4",
-//         content:
-//           'Custom hooks are JavaScript functions that:\n\n• Start with "use" prefix\n• Can call other hooks\n• Allow you to extract component logic into reusable functions\n• Help with separation of concerns\n\nExample:\n```javascript\nfunction useCounter(initialValue = 0) {\n  const [count, setCount] = useState(initialValue);\n  const increment = () => setCount(c => c + 1);\n  const decrement = () => setCount(c => c - 1);\n  return { count, increment, decrement };\n}\n```',
-//         role: "assistant",
-//         timestamp: new Date("2024-01-15T10:01:30"),
-//       },
-//     ],
-//     updatedAt: new Date("2024-01-15T10:01:30"),
-//   },
-//   {
-//     id: "2",
-//     title: "JavaScript Array Methods",
-//     messages: [
-//       {
-//         id: "5",
-//         content: "Explain the difference between map, filter, and reduce",
-//         role: "user",
-//         timestamp: new Date("2024-01-14T15:30:00"),
-//       },
-//       {
-//         id: "6",
-//         content:
-//           "Here are the key differences:\n\n**map()**: Transforms each element and returns a new array of the same length\n```javascript\n[1, 2, 3].map(x => x * 2) // [2, 4, 6]\n```\n\n**filter()**: Returns a new array with elements that pass a test\n```javascript\n[1, 2, 3, 4].filter(x => x > 2) // [3, 4]\n```\n\n**reduce()**: Reduces array to a single value\n```javascript\n[1, 2, 3, 4].reduce((sum, x) => sum + x, 0) // 10\n```",
-//         role: "assistant",
-//         timestamp: new Date("2024-01-14T15:30:30"),
-//       },
-//     ],
-//     updatedAt: new Date("2024-01-14T15:30:30"),
-//   },
-//   {
-//     id: "3",
-//     title: "CSS Grid vs Flexbox",
-//     messages: [
-//       {
-//         id: "7",
-//         content: "When should I use CSS Grid vs Flexbox?",
-//         role: "user",
-//         timestamp: new Date("2024-01-13T09:15:00"),
-//       },
-//       {
-//         id: "8",
-//         content:
-//           "**Use Flexbox when:**\n• Working with one-dimensional layouts (row OR column)\n• Distributing space among items in a container\n• Aligning items within a container\n• Creating flexible, responsive navigation bars\n\n**Use CSS Grid when:**\n• Working with two-dimensional layouts (rows AND columns)\n• Creating complex page layouts\n• You need precise control over both axes\n• Building card layouts or dashboard interfaces\n\n**Pro tip**: They work great together! Use Grid for page layout, Flexbox for component layout.",
-//         role: "assistant",
-//         timestamp: new Date("2024-01-13T09:15:45"),
-//       },
-//     ],
-//     updatedAt: new Date("2024-01-13T09:15:45"),
-//   },
-// ];
+import {
+  setChats,
+  setLoading,
+  setMessages,
+  setNewMessage,
+  setSelectedChatId,
+} from "@/store/slices/chatSlice";
+import CreateChatModal from "../CreateChatModal";
+import { getMessages } from "@/lib/chatApi";
+import { useSocket } from "@/contexts/socket.context";
 
 const Hero = () => {
-  // const [chats, setChats] = useState([]);
-  const [selectedChatId, setSelectedChatId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const chats = useSelector((state) => state.chat.chats);
+  const { socket } = useSocket();
+
+  console.log("Socket", socket);
+
+  const state = useSelector((state) => state);
+  const selectedChatId = useSelector((state) => state.chat.selectedChatId);
+
+  const chats = useSelector((state) => [state.chat.chats].reverse());
 
   const dispatch = useDispatch();
 
-  const selectedChat = chats.find((chat) => chat._id === selectedChatId);
+  const selectedChat = chats.find(
+    (chat) => String(chat._id) === String(selectedChatId)
+  );
+
+  console.log("redux state", state);
+  // console.log("chat id", selectedChatId);
+  console.log("selected chat", selectedChat);
 
   useEffect(() => {
     const fetchChats = async () => {
@@ -108,65 +52,108 @@ const Hero = () => {
     fetchChats();
   }, [dispatch]);
 
-  const handleNewChat = () => {
-    const newChat = {
-      id: Date.now().toString(),
-      title: "New Chat",
-      messages: [],
-      updatedAt: new Date(),
+  useEffect(() => {
+    if (selectedChatId) {
+      (async () => {
+        const response = await getMessages(selectedChatId);
+        console.log("messages", response);
+        dispatch(setMessages(response));
+      })();
+    }
+  }, [selectedChatId, dispatch]);
+
+  useEffect(() => {
+    if (!socket) {
+      console.log("Socket is false");
+      return;
+    }
+
+    const onAiResponse = (payload) => {
+      // Always clear the loading flag as soon as an AI response arrives so the UI
+      // doesn't get stuck (it may have been triggered for a different chat).
+      dispatch(setLoading(false));
+
+      if (String(payload.chat) !== String(selectedChatId)) {
+        console.log("payload chat id and selected chat id not equal");
+        // Do not inject the AI message into the currently-open messages array
+        // if it belongs to another chat. We already cleared the loading state.
+        return;
+      }
+
+      console.log("ai message", payload);
+
+      const aiMessage = {
+        _id: Date.now().toString(),
+        role: "model",
+        content: payload.content,
+        createdAt: new Date().toISOString(),
+      };
+
+      dispatch(setNewMessage(aiMessage));
     };
-    setChats((prev) => [newChat, ...prev]);
-    setSelectedChatId(newChat.id);
+
+    socket.on("ai-message-response", onAiResponse);
+
+    // clear loading on socket-level errors so UI doesn't remain stuck
+    const onConnectError = (err) => {
+      console.error("socket connect_error", err);
+      dispatch(setLoading(false));
+    };
+
+    const onDisconnect = () => {
+      console.log("socket disconnected");
+      dispatch(setLoading(false));
+    };
+
+    socket.on("connect_error", onConnectError);
+    socket.on("disconnect", onDisconnect);
+
+    return () => {
+      socket.off("ai-message-response", onAiResponse);
+      socket.off("connect_error", onConnectError);
+      socket.off("disconnect", onDisconnect);
+    };
+  }, [socket, selectedChatId, dispatch]);
+
+  const handleNewChat = () => {
+    setOpen(true);
     setIsSidebarOpen(false);
   };
 
   const handleSelectChat = (chatId) => {
-    setSelectedChatId(chatId);
+    // switching chats should also clear any pending loading state so the
+    // UI doesn't show the old chat's loading indicator for the new chat.
+    dispatch(setLoading(false));
+    dispatch(setSelectedChatId(chatId));
     setIsSidebarOpen(false);
   };
 
   const handleSendMessage = (content) => {
-    if (!selectedChat) return;
+    console.log("user message", content);
+
+    if (!selectedChatId || !socket) return;
 
     const userMessage = {
-      id: Date.now().toString(),
+      _id: Date.now().toString(),
       content,
       role: "user",
-      timestamp: new Date(),
+      createdAt: new Date().toISOString(),
+      chat: selectedChatId,
     };
 
-    const assistantMessage = {
-      id: (Date.now() + 1).toString(),
-      content:
-        "I'm a demo ChatGPT clone! This is where the AI response would appear. The message you sent was: \"" +
-        content +
-        '"',
-      role: "assistant",
-      timestamp: new Date(),
-    };
+    dispatch(setNewMessage(userMessage));
+    dispatch(setLoading(true));
 
-    setChats((prev) =>
-      prev.map((chat) =>
-        chat.id === selectedChatId
-          ? {
-              ...chat,
-              messages: [...chat.messages, userMessage, assistantMessage],
-              title:
-                chat.messages.length === 0
-                  ? content.slice(0, 30) + (content.length > 30 ? "..." : "")
-                  : chat.title,
-              updatedAt: new Date(),
-            }
-          : chat
-      )
-    );
+    socket.emit("message", {
+      chat: selectedChatId,
+      content,
+    });
   };
 
   return (
     <div className="flex h-screen bg-gray-800 text-white">
       {/* Sidebar */}
       <Sidebar
-        chats={chats}
         selectedChatId={selectedChatId}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -191,6 +178,8 @@ const Hero = () => {
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
+
+      {open && <CreateChatModal open={open} onClose={() => setOpen(false)} />}
     </div>
   );
 };

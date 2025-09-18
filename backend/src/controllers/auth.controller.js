@@ -111,7 +111,30 @@ const postLoginController = async (req, res) => {
   }
 };
 
+const getUserController = async (req, res) => {
+  try {
+    const id = req.user._id;
+    const user = await User.findById(id);
+    if (!user)
+      return res
+        .status(404)
+        .json({ message: "User Unauthorized", success: false });
+
+    res.json({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Server error " + err.message });
+  }
+};
+
 module.exports = {
   postRegisterController,
   postLoginController,
+  getUserController,
 };

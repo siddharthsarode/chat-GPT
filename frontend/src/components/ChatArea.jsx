@@ -3,9 +3,15 @@ import ChatHeader from "./ChatHeader";
 import ChatMessage from "./ChatMessage";
 import InputBox from "./InputBox";
 import { Button } from "./ui/button";
+import { useSelector } from "react-redux";
 
-const ChatArea = ({ chat, onSendMessage, onToggleSidebar, onNewChat }) => {
+const ChatArea = ({ onSendMessage, onToggleSidebar, onNewChat }) => {
   const messagesEndRef = useRef(null);
+  const selectedChatId = useSelector((state) => state.chat.selectedChatId);
+  const chat = useSelector((state) => state.chat);
+  const isLoading = useSelector((state) => state.chat.isLoading);
+
+  console.log("chat id", selectedChatId);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -17,7 +23,7 @@ const ChatArea = ({ chat, onSendMessage, onToggleSidebar, onNewChat }) => {
     scrollToBottom();
   }, [chat?.messages]);
 
-  if (!chat) {
+  if (!selectedChatId) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center text-gray-400 space-y-3">
@@ -54,8 +60,21 @@ const ChatArea = ({ chat, onSendMessage, onToggleSidebar, onNewChat }) => {
         ) : (
           <div className="space-y-6">
             {chat?.messages?.map((message) => (
-              <ChatMessage key={message.id} message={message} />
+              <ChatMessage key={message._id} message={message} />
             ))}
+
+            {isLoading && (
+              <div className="flex items-start gap-3">
+                <div className="bg-gray-700 px-3 py-2 rounded-lg max-w-xs">
+                  <div className="flex items-center gap-1">
+                    <span className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" />
+                    <span className="h-2 w-2 bg-gray-400 rounded-full animate-bounce delay-75" />
+                    <span className="h-2 w-2 bg-gray-400 rounded-full animate-bounce delay-150" />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
         )}
