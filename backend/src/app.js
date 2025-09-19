@@ -14,7 +14,7 @@ const app = express();
 // middlewares
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname + "../public")));
+app.use(express.static(path.join(__dirname, "../public")));
 
 // Third party middlewares
 app.use(
@@ -31,7 +31,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/chats", chatRoutes);
 app.use("/api/chat/messages", messageRoutes);
 
-app.get("*name", (req, res) => {
+app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
