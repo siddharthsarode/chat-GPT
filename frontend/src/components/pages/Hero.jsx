@@ -121,8 +121,6 @@ const Hero = () => {
   };
 
   const handleSelectChat = (chatId) => {
-    // switching chats should also clear any pending loading state so the
-    // UI doesn't show the old chat's loading indicator for the new chat.
     dispatch(setLoading(false));
     dispatch(setSelectedChatId(chatId));
     setIsSidebarOpen(false);

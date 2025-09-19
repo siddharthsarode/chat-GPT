@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 import { useSelector } from "react-redux";
+import { apiRequest } from "@/lib/api";
 
 const Sidebar = ({
   selectedChatId,
@@ -20,6 +21,15 @@ const Sidebar = ({
   const chats = useSelector((state) => state.chat.chats);
 
   console.log("redux chats", chats);
+
+  const handleLogout = async () => {
+    try {
+      await apiRequest("/api/auth/logout", "GET");
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <>
@@ -58,7 +68,7 @@ const Sidebar = ({
                 key={chat._id}
                 onClick={() => onSelectChat(chat._id)}
                 className={`
-                  w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors group
+                  w-full flex cursor-pointer items-center gap-3 p-3 rounded-lg text-left transition-colors group
                   ${
                     selectedChatId === chat._id
                       ? "bg-gray-700 text-white"
@@ -76,15 +86,10 @@ const Sidebar = ({
         {/* Bottom Actions */}
         <div className="p-4 border-t border-gray-700">
           <div className="space-y-1">
-            <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors text-gray-300 hover:text-white">
-              <Settings size={16} />
-              <span className="text-sm">Settings</span>
-            </button>
-            <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors text-gray-300 hover:text-white">
-              <User size={16} />
-              <span className="text-sm">Profile</span>
-            </button>
-            <button className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors text-gray-300 hover:text-white">
+            <button
+              onClick={handleLogout}
+              className="w-full cursor-pointer flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
+            >
               <LogOut size={16} />
               <span className="text-sm">Logout</span>
             </button>

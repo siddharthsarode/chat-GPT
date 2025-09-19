@@ -122,3 +122,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Global scrollbar style */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #212226; /* secondary color */
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #364153; /* primary color */
+  border-radius: 9999px;
+}

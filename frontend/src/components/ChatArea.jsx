@@ -58,7 +58,7 @@ const ChatArea = ({ onSendMessage, onToggleSidebar, onNewChat }) => {
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 max-w-4xl mx-auto">
             {chat?.messages?.map((message) => (
               <ChatMessage key={message._id} message={message} />
             ))}
@@ -83,7 +83,7 @@ const ChatArea = ({ onSendMessage, onToggleSidebar, onNewChat }) => {
       {/* Input Box */}
       <div className="fixed bottom-0 left-0 right-0 bg-gray-900">
         <div className="flex justify-center items-center">
-          <div className="w-full md:w-1/2 lg:w-1/3 p-4 lg:ms-44">
+          <div className="w-full md:w-1/2 lg:w-1/3 p-4 lg:ms-56">
             <InputBox onSendMessage={onSendMessage} />
           </div>
         </div>

@@ -133,8 +133,17 @@ const getUserController = async (req, res) => {
   }
 };
 
+const logoutController = (req, res) => {
+  res.clearCookie("gpt_token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+  });
+  res.status(200).json({ message: "Logged out successfully" });
+};
+
 module.exports = {
   postRegisterController,
   postLoginController,
   getUserController,
+  logoutController,
 };
