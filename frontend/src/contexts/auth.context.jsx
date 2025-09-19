@@ -25,11 +25,8 @@ export const AuthContextProvider = ({ children }) => {
     const fetchUser = async () => {
       try {
         setLoading(true);
-        // Backend returns the user object directly (or 401 on failure).
-        // e.g. { username, email, role, status }
+
         const response = await apiRequest("/api/auth/me", "GET");
-        // console.log("/api/auth/me ->", response);
-        // If response contains an email or username assume authenticated
         if (response && (response.email || response.username)) {
           setUser(response);
         } else {

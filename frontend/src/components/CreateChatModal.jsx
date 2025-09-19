@@ -27,7 +27,7 @@ export default function CreateChatModal({ open, onClose }) {
       dispatch(setNewChat(chatResponse.chat));
       dispatch(setSelectedChatId(chatResponse.chat._id));
       onClose();
-      console.log("chat response", chatResponse);
+      // console.log("chat response", chatResponse);
     } catch (err) {
       console.log(err);
     }

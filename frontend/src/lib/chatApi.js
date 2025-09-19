@@ -11,7 +11,7 @@ export const getMessages = async (chatId) => {
   try {
     const response = await apiRequest(`/api/chat/messages/${chatId}`, "GET");
     if (response.success) {
-      console.log("get message response", response);
+      // console.log("get message response", response);
       return response.data;
     }
   } catch (err) {

@@ -50,8 +50,6 @@ const Register = () => {
 
   const onSubmit = async (data) => {
     try {
-      // Here you can call your API later
-      console.log("Form Data:", data);
       await register(data);
       navigate("/");
     } catch (err) {

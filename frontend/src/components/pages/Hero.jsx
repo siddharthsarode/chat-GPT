@@ -19,23 +19,18 @@ const Hero = () => {
   const [open, setOpen] = useState(false);
 
   const { socket } = useSocket();
-
-  console.log("Socket", socket);
-
-  const state = useSelector((state) => state);
-  const selectedChatId = useSelector((state) => state.chat.selectedChatId);
-
-  const chats = useSelector((state) => [state.chat.chats].reverse());
-
   const dispatch = useDispatch();
+
+  const selectedChatId = useSelector((state) => state.chat.selectedChatId);
+  const chats = useSelector((state) => [state.chat.chats].reverse());
 
   const selectedChat = chats.find(
     (chat) => String(chat._id) === String(selectedChatId)
   );
 
-  console.log("redux state", state);
-  // console.log("chat id", selectedChatId);
-  console.log("selected chat", selectedChat);
+  // console.log("redux state", state);
+  //  console.log("chat id", selectedChatId);
+  // console.log("selected chat", selectedChat);
 
   useEffect(() => {
     const fetchChats = async () => {
@@ -44,7 +39,7 @@ const Hero = () => {
         if (response.success) {
           dispatch(setChats(response.data));
         }
-        console.log("Fetched chats:", response);
+        // console.log("Fetched chats:", response);
       } catch (err) {
         console.error("Error fetching chats:", err);
       }
@@ -56,7 +51,7 @@ const Hero = () => {
     if (selectedChatId) {
       (async () => {
         const response = await getMessages(selectedChatId);
-        console.log("messages", response);
+        // console.log("messages", response);
         dispatch(setMessages(response));
       })();
     }
@@ -75,12 +70,11 @@ const Hero = () => {
 
       if (String(payload.chat) !== String(selectedChatId)) {
         console.log("payload chat id and selected chat id not equal");
-        // Do not inject the AI message into the currently-open messages array
-        // if it belongs to another chat. We already cleared the loading state.
+
         return;
       }
 
-      console.log("ai message", payload);
+      // console.log("ai message", payload);
 
       const aiMessage = {
         _id: Date.now().toString(),
@@ -127,7 +121,7 @@ const Hero = () => {
   };
 
   const handleSendMessage = (content) => {
-    console.log("user message", content);
+    // console.log("user message", content);
 
     if (!selectedChatId || !socket) return;
 

@@ -20,7 +20,7 @@ const Sidebar = ({
 }) => {
   const chats = useSelector((state) => state.chat.chats);
 
-  console.log("redux chats", chats);
+  // console.log("redux chats", chats);
 
   const handleLogout = async () => {
     try {

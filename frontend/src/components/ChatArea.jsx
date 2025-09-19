@@ -11,7 +11,7 @@ const ChatArea = ({ onSendMessage, onToggleSidebar, onNewChat }) => {
   const chat = useSelector((state) => state.chat);
   const isLoading = useSelector((state) => state.chat.isLoading);
 
-  console.log("chat id", selectedChatId);
+  // console.log("chat id", selectedChatId);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
